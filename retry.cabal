@@ -1,6 +1,6 @@
 name:                retry
 
-description: 
+description:
 
         This package exposes combinators that can wrap arbitrary
         monadic actions. They run the action and potentially retry
@@ -14,7 +14,7 @@ description:
         case we should hang back for a bit and retry the query instead
         of simply raising an exception.
 
-version:             0.7
+version:             0.7.0.0.7
 synopsis:            Retry combinators for monadic actions that may fail
 license:             BSD3
 license-file:        LICENSE
@@ -28,7 +28,7 @@ Homepage:            http://github.com/Soostone/retry
 
 library
   exposed-modules:     Control.Retry
-  build-depends:       
+  build-depends:
       base                 ==4.*
     , data-default-class
     , exceptions           >= 0.5 && < 0.9
@@ -43,8 +43,8 @@ test-suite test
     main-is:        main.hs
     hs-source-dirs: test,src
     ghc-options:    -threaded
-    build-depends:       
-        base              ==4.*  
+    build-depends:
+        base              ==4.*
       , exceptions
       , transformers
       , data-default-class
@@ -58,4 +58,4 @@ test-suite test
 
 
 
- 
+

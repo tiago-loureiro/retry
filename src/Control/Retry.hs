@@ -43,7 +43,7 @@ module Control.Retry
     , fullJitterBackoff
     , fibonacciBackoff
     , limitRetries
-    
+
     -- * Policy Transformers
     , limitRetriesByDelay
     , capDelay
@@ -148,11 +148,11 @@ limitRetries i = retryPolicy $ \ n -> if n >= i then Nothing else (Just 0)
 -- and fail.
 limitRetriesByDelay
     :: Int
-    -- ^ Time-delay limit in microseconds. 
+    -- ^ Time-delay limit in microseconds.
     -> RetryPolicy
     -> RetryPolicy
-limitRetriesByDelay i p = RetryPolicyM $ \ n -> 
-    (>>= limit) `liftM` getRetryPolicyM p n 
+limitRetriesByDelay i p = RetryPolicyM $ \ n ->
+    (>>= limit) `liftM` getRetryPolicyM p n
   where
     limit delay = if delay >= i then Nothing else Just delay
 
@@ -183,9 +183,9 @@ exponentialBackoff base = retryPolicy $ \ n -> Just (2^n * base)
 -- Blog article.
 --
 -- @http:\/\/www.awsarchitectureblog.com\/2015\/03\/backoff.html@
--- 
+--
 -- temp = min(cap, base * 2 ** attempt)
--- 
+--
 -- sleep = temp / 2 + random_between(0, temp / 2)
 fullJitterBackoff :: MonadIO m => Int -> RetryPolicyM m
 fullJitterBackoff base = RetryPolicyM $ \n -> do
@@ -219,7 +219,7 @@ capDelay
     -- ^ A maximum delay in microseconds
     -> RetryPolicyM m
     -> RetryPolicyM m
-capDelay limit p = RetryPolicyM $ \ n -> 
+capDelay limit p = RetryPolicyM $ \ n ->
   (fmap (min limit)) `liftM` (getRetryPolicyM p) n
 
 
@@ -249,13 +249,13 @@ retrying :: MonadIO m
          -> (Int -> b -> m Bool)
          -- ^ An action to check whether the result should be retried.
          -- If True, we delay and retry the operation.
-         -> m b
+         -> (Int -> m b)
          -- ^ Action to run
          -> m b
 retrying (RetryPolicyM policy) chk f = go 0
     where
       go n = do
-          res <- f
+          res <- f n
           chk' <- chk n res
           case chk' of
             True -> do
@@ -292,7 +292,7 @@ recoverAll
          :: (MonadIO m, MonadCatch m)
 #endif
          => RetryPolicyM m
-         -> m a
+         -> (Int -> m a)
          -> m a
 recoverAll set f = recovering set [h] f
     where
@@ -315,7 +315,7 @@ recovering
            -- retried if this returns True *and* the policy allows it.
            -- This action will be consulted first even if the policy
            -- later blocks it.
-           -> m a
+           -> (Int -> m a)
            -- ^ Action to perform
            -> m a
 recovering (RetryPolicyM policy) hs f = mask $ \restore -> go restore 0
@@ -323,7 +323,7 @@ recovering (RetryPolicyM policy) hs f = mask $ \restore -> go restore 0
       go restore = loop
         where
           loop n = do
-            r <- try $ restore f
+            r <- try $ restore (f n)
             case r of
               Right x -> return x
               Left e -> recover (e :: SomeException) hs
@@ -380,7 +380,7 @@ simulatePolicyPP n p = do
     ps <- simulatePolicy n p
     forM_ ps $ \ (n, res) -> putStrLn $
       show n <> ": " <> maybe "Inhibit" ppTime res
-    putStrLn $ "Total cumulative delay would be: " <> 
+    putStrLn $ "Total cumulative delay would be: " <>
       (ppTime $ sum $ (mapMaybe snd) ps)
 
 
